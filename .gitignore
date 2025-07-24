@@ -1,0 +1,8 @@
+*.o
+*.so
+build/
+target/
+dist/
+__pycache__/
+wheelhouse/
+*.egg-info/

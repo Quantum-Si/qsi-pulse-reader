@@ -1,0 +1,20 @@
+[package]
+name = "qsi_pulse_reader_py"
+version = "1.0.0"
+edition = "2024"
+description = "Python bindings of library for reading pulses.bin files"
+readme = "README.md"
+repository = "https://github.com/QuantumSi/qsi-pulse-reader"
+license-file = "LICENSE"
+
+
+[lib]
+path = "rust/lib.rs"
+name = "qsi_pulse_reader_py"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.25", features = ["extension-module", "anyhow"] }
+anyhow = "1.0"
+qsi_pulse_reader = { path = "./rust-core" }
+numpy = "0.25"

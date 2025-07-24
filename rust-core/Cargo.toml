@@ -1,0 +1,20 @@
+[package]
+name = "qsi_pulse_reader"
+version = "1.0.0"
+edition = "2024"
+description = "Library for reading pulses.bin files"
+readme = "README.md"
+repository = "https://github.com/QuantumSi/qsi-pulse-reader"
+license-file = "LICENSE.rst"
+
+[lib]
+path = "src/lib.rs"
+name = "qsi_pulse_reader"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+
+[dev-dependencies]
+tempfile = "3.20"

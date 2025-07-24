@@ -1,0 +1,73 @@
+[build-system]
+requires = [ "setuptools", "setuptools-rust" ]
+backend-path = [ "./" ]
+build-backend = "build_backend"
+
+[project]
+name = "qsi-pulse-reader"
+version = "1.0.0"
+description = "Library for reading pulses.bin files"
+readme = "README.md"
+authors = [
+    {name = "Eric Hermes", email = "community@quantum-si.com"}
+]
+maintainers = [
+    {name = "Eric Hermes", email = "community@quantum-si.com"}
+]
+license = "LicenseRef-Quantum-Si-Software-License-Agreement"
+license-files = ["LICENSE.rst"]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy >= 1.16.0",
+    "pandas >= 1.5.3, < 3.0.0",
+]
+
+[project.optional-dependencies]
+test = [ "pytest >= 7.4.0" ]
+
+[project.urls]
+Homepage = "https://www.quantum-si.com/"
+Repository = "https://github.com/QuantumSi/qsi-pulse-reader"
+"Bug Tracker" = "https://github.com/QuantumSi/qsi-pulse-reader/issues"
+
+[tool.setuptools.packages]
+find = { where = [ "src" ] }
+
+[[tool.setuptools-rust.ext-modules]]
+target = "qsi_pulse_reader.qsi_pulse_reader"
+optional = false
+
+[tool.cibuildwheel]
+skip = [
+    # skip 32-bit windows
+    "*-win32",
+    # skip musllinux
+    "*-musllinux*",
+]
+build-frontend = "build[uv]"
+environment = { PATH="$PATH:$HOME/.cargo/bin" }
+test-sources = [ "python/test/pulses.bin" ]
+test-requires = [ "pytest>=7.4.0" ]
+test-command = "python -m pytest {project}/python/test"
+
+[tool.cibuildwheel.linux]
+# Linux builds run in a Docker container, so we can't rely on the host Rust compiler.
+# This line installs Rust in the Docker environment before building wheels.
+before-all = [
+    "curl https://sh.rustup.rs -sSf | sh -s -- --profile minimal --default-toolchain stable -y"
+]
+
+[tool.black]
+line-length = 100
+target-version = [ 'py311' ]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+

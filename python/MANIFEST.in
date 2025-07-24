@@ -1,0 +1,9 @@
+include build_backend.py
+
+include rust-core/Cargo.toml
+include rust-core/Cargo.lock
+recursive-include rust-core/src *
+
+include Cargo.toml
+include Cargo.lock
+recursive-include rust *
