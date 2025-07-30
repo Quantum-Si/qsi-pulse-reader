@@ -14,5 +14,4 @@ name = "qsi_pulse_reader_r"
 
 [dependencies]
 extendr-api = "0.8"
-extendr-macros = "0.8"
 qsi_pulse_reader = { path = "./rust-core" }

@@ -93,7 +93,6 @@ name = "qsi_pulse_reader_r"
 version = "1.0.0"
 dependencies = [
  "extendr-api",
- "extendr-macros",
  "qsi_pulse_reader",
 ]
 
