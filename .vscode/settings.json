@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "R/qsi.pulse.reader/src/rust/Cargo.toml"
+    ]
+}
