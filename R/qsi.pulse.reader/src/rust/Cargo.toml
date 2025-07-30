@@ -6,7 +6,8 @@ description = "R bindings of library for reading pulses.bin files"
 readme = "README.md"
 repository = "https://github.com/QuantumSi/qsi-pulse-reader"
 license-file = "LICENSE"
-
+publish = false
+rust-version = '1.65'
 
 [lib]
 crate-type = [ "staticlib" ]

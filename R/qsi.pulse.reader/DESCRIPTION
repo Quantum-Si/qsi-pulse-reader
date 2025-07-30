@@ -8,4 +8,7 @@ License: file LICENSE.rst
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-Config/rextendr/version: 0.3.1
+Config/rextendr/version: 0.4.1.9000
+SystemRequirements: Cargo (Rust's package manager), rustc
+Depends: 
+    R (>= 4.2)
