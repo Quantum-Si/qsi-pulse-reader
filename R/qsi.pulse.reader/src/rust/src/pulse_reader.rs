@@ -121,6 +121,6 @@ impl PulseReader {
 }
 
 extendr_module! {
-    mod qsi_pulse_reader;
+    mod pulse_reader;
     impl PulseReader;
 }
