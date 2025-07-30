@@ -1,1 +1,2 @@
 ^src/\.cargo$
+^src/rust/rust-core/target$
