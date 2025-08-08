@@ -119,4 +119,4 @@ jobs:
         python-version-file: "python/pyproject.toml"
 
     - name: Publish
-      run: uv publish --publish-url $PYPI_PUBLISH_URL --trusted-publishing always dist/*
+      run: uv publish --publish-url ${{ vars.PYPI_PUBLISH_URL }} --trusted-publishing always dist/*
