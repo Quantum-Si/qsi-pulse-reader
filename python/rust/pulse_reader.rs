@@ -6,6 +6,7 @@ use pyo3::types::PyDict;
 use qsi_pulse_reader::pulse_filter::PulseFilter as RustPulseFilter;
 use qsi_pulse_reader::pulse_reader::PulseReader as RustPulseReader;
 use qsi_pulse_reader::pulse_reader::headers::ApertureHeader;
+use qsi_pulse_reader::pulse_reader::merge_pulse_files as rust_merge_pulse_files;
 
 /// Pulses.bin reader
 #[pyclass]
@@ -14,6 +15,7 @@ pub(super) struct PulseReader {
     pulse_filter: Option<PulseFilter>,
     pandas: Py<PyModule>,
     common_attributes: Py<PyDict>,
+    metadata: Py<PyDict>,
 }
 
 impl PulseReader {
@@ -97,18 +99,35 @@ impl PulseReader {
             pulse_filter.cloned()
         };
         let pandas = PyModule::import(py, "pandas")?.into();
+
+        // Set common dataframe attributes
         let common_attributes = PyDict::new(py);
         common_attributes.set_item("source", "pulses.bin")?;
-        common_attributes.set_item("analysis_id", file_name.split('.').next().unwrap())?;
+        common_attributes.set_item(
+            "analysis_id",
+            file_name
+                .split('.')
+                .next()
+                .ok_or_else(|| PyRuntimeError::new_err("Invalid file name"))?,
+        )?;
         common_attributes.set_item("frame_dur_s", 1.0 / pulse_reader.fps)?;
-        let duration = pulse_reader.metadata["duration"].as_f64().unwrap() as f32;
+        let duration = pulse_reader.metadata["duration"].as_f64().ok_or_else(|| {
+            PyRuntimeError::new_err("Missing or invalid 'duration' field in metadata")
+        })? as f32;
         common_attributes.set_item("run_dur_f", (duration * pulse_reader.fps).ceil() as u64)?;
         common_attributes.set_item("run_dur_s", duration)?;
+
+        // Load metadata
+        let json = PyModule::import(py, "json")?;
+        let metadata = json.call_method1("loads", (pulse_reader.raw_metadata.clone(),))?;
+        let metadata = metadata.downcast::<PyDict>().unwrap().clone().into();
+
         Ok(PulseReader {
             pulse_reader: Some(pulse_reader),
             pulse_filter,
             pandas,
             common_attributes: common_attributes.into(),
+            metadata,
         })
     }
 
@@ -131,10 +150,10 @@ impl PulseReader {
         let (records, header) = py.allow_threads(|| {
             self.pulse_reader
                 .as_mut()
-                .unwrap()
+                .ok_or_else(|| PyRuntimeError::new_err("PulseReader is not initialized"))?
                 .get_all_records(aperture_index)
-                .unwrap()
-        });
+                .map_err(|e| PyRuntimeError::new_err(format!("Failed to get records: {}", e)))
+        })?;
         let pydict = records.to_pydict(py, None, None)?;
         let df = self.to_dataframe(py, &header, &pydict)?;
         Ok(df)
@@ -194,10 +213,10 @@ impl PulseReader {
         let (pulses, header) = py.allow_threads(|| {
             self.pulse_reader
                 .as_mut()
-                .unwrap()
+                .ok_or_else(|| PyRuntimeError::new_err("PulseReader is not initialized"))?
                 .get_pulses(aperture_index, pulse_filter)
-                .unwrap()
-        });
+                .map_err(|e| PyRuntimeError::new_err(format!("Failed to get pulses: {}", e)))
+        })?;
         let ap = if include_aperture_index {
             Some(aperture_index)
         } else {
@@ -246,7 +265,10 @@ impl PulseReader {
 
         // Identify if any of the specified apertures are missing
         // Exploit the fact that both aperture lists are sorted
-        let pulse_reader: &RustPulseReader = self.pulse_reader.as_ref().unwrap();
+        let pulse_reader: &RustPulseReader = self
+            .pulse_reader
+            .as_ref()
+            .ok_or_else(|| PyRuntimeError::new_err("PulseReader is not initialized"))?;
         let mut found_apertures = Vec::with_capacity(apertures.len());
         let mut missing_apertures = Vec::new();
         let mut i = 0;
@@ -272,7 +294,7 @@ impl PulseReader {
 
         self.pulse_reader
             .as_mut()
-            .unwrap()
+            .ok_or_else(|| PyRuntimeError::new_err("PulseReader is not initialized"))?
             .copy_apertures_to_new_file(&found_apertures, file_name)?;
         Ok(())
     }
@@ -300,18 +322,37 @@ impl PulseReader {
     #[getter]
     fn apertures(&self) -> PyResult<Vec<usize>> {
         self.validate()?;
-        Ok(self.pulse_reader.as_ref().unwrap().index.apertures.clone())
+        Ok(self
+            .pulse_reader
+            .as_ref()
+            .ok_or_else(|| PyRuntimeError::new_err("PulseReader is not initialized"))?
+            .index
+            .apertures
+            .clone())
     }
 
     #[getter]
-    fn metadata(&self) -> PyResult<String> {
-        self.validate()?;
-        Ok(self.pulse_reader.as_ref().unwrap().raw_metadata.clone())
+    fn metadata(&self, py: Python) -> PyResult<Py<PyDict>> {
+        Ok(self.metadata.clone_ref(py))
     }
 
     #[getter]
     fn trimmed(&self) -> PyResult<bool> {
         self.validate()?;
-        Ok(self.pulse_reader.as_ref().unwrap().trimmed)
+        Ok(self
+            .pulse_reader
+            .as_ref()
+            .ok_or_else(|| PyRuntimeError::new_err("PulseReader is not initialized"))?
+            .trimmed)
     }
+}
+
+#[pyfunction]
+pub fn merge_pulse_files(file_names: Vec<String>, new_file_name: &str) -> PyResult<()> {
+    let mut pulse_readers: Vec<RustPulseReader> = Vec::with_capacity(file_names.len());
+    for file_name in &file_names {
+        pulse_readers.push(RustPulseReader::open(file_name)?);
+    }
+    rust_merge_pulse_files(&mut pulse_readers, new_file_name)?;
+    Ok(())
 }

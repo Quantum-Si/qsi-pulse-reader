@@ -40,23 +40,22 @@ impl PulseFilter {
     #[new]
     pub fn new(kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let mut pulse_filter = RustPulseFilter::default();
-        if kwargs.is_none() {
-            return Ok(PulseFilter { pulse_filter });
-        }
-        for (key, value) in kwargs.unwrap().iter() {
-            match key.extract::<&str>()? {
-                "min_dur_f" => pulse_filter.min_dur_f = Some(value.extract()?),
-                "min_dur_s" => pulse_filter.min_dur_s = Some(value.extract()?),
-                "max_dur_s" => pulse_filter.max_dur_s = Some(value.extract()?),
-                "min_snr" => pulse_filter.min_snr = Some(value.extract()?),
-                "min_intensity" => pulse_filter.min_intensity = Some(value.extract()?),
-                "min_binratio" => pulse_filter.min_binratio = Some(value.extract()?),
-                "max_binratio" => pulse_filter.max_binratio = Some(value.extract()?),
-                "start_m" => pulse_filter.start_m = Some(value.extract()?),
-                "end_m" => pulse_filter.end_m = Some(value.extract()?),
-                "mask_s" => pulse_filter.mask_s = Some(value.extract()?),
-                "recalc_ipd" => pulse_filter.recalc_ipd = value.extract()?,
-                _ => {}
+        if let Some(kwargs) = kwargs {
+            for (key, value) in kwargs.iter() {
+                match key.extract::<&str>()? {
+                    "min_dur_f" => pulse_filter.min_dur_f = Some(value.extract()?),
+                    "min_dur_s" => pulse_filter.min_dur_s = Some(value.extract()?),
+                    "max_dur_s" => pulse_filter.max_dur_s = Some(value.extract()?),
+                    "min_snr" => pulse_filter.min_snr = Some(value.extract()?),
+                    "min_intensity" => pulse_filter.min_intensity = Some(value.extract()?),
+                    "min_binratio" => pulse_filter.min_binratio = Some(value.extract()?),
+                    "max_binratio" => pulse_filter.max_binratio = Some(value.extract()?),
+                    "start_m" => pulse_filter.start_m = Some(value.extract()?),
+                    "end_m" => pulse_filter.end_m = Some(value.extract()?),
+                    "mask_s" => pulse_filter.mask_s = Some(value.extract()?),
+                    "recalc_ipd" => pulse_filter.recalc_ipd = value.extract()?,
+                    _ => {}
+                }
             }
         }
         Ok(PulseFilter { pulse_filter })

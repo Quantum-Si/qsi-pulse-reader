@@ -1,5 +1,6 @@
 use crate::pulse_reader::constants::*;
 use crate::pulse_reader::headers::PulseRecordType;
+use anyhow::{Result, anyhow};
 
 /// A single raw record
 ///
@@ -19,17 +20,56 @@ pub struct RawRecord {
 
 impl RawRecord {
     /// Creates a new raw pulse record from a buffer of exactly 16 bytes
-    pub fn new(buffer: &[u8]) -> Self {
-        RawRecord {
-            frames_since_last: u16::from_le_bytes(buffer[0..2].try_into().unwrap()),
-            duration: u16::from_le_bytes(buffer[2..4].try_into().unwrap()),
-            m0: i16::from_le_bytes(buffer[4..6].try_into().unwrap()),
-            m1: i16::from_le_bytes(buffer[6..8].try_into().unwrap()),
-            bk0: i16::from_le_bytes(buffer[8..10].try_into().unwrap()),
-            bk1: i16::from_le_bytes(buffer[10..12].try_into().unwrap()),
-            std0: i16::from_le_bytes(buffer[12..14].try_into().unwrap()),
-            std1: i16::from_le_bytes(buffer[14..16].try_into().unwrap()),
+    pub fn new(buffer: &[u8]) -> Result<Self> {
+        if buffer.len() != 16 {
+            return Err(anyhow!(
+                "Buffer must be exactly 16 bytes, got {}",
+                buffer.len()
+            ));
         }
+
+        Ok(RawRecord {
+            frames_since_last: u16::from_le_bytes(
+                buffer[0..2]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse frames_since_last from raw record"))?,
+            ),
+            duration: u16::from_le_bytes(
+                buffer[2..4]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse duration from raw record"))?,
+            ),
+            m0: i16::from_le_bytes(
+                buffer[4..6]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse m0 from raw record"))?,
+            ),
+            m1: i16::from_le_bytes(
+                buffer[6..8]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse m1 from raw record"))?,
+            ),
+            bk0: i16::from_le_bytes(
+                buffer[8..10]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse bk0 from raw record"))?,
+            ),
+            bk1: i16::from_le_bytes(
+                buffer[10..12]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse bk1 from raw record"))?,
+            ),
+            std0: i16::from_le_bytes(
+                buffer[12..14]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse std0 from raw record"))?,
+            ),
+            std1: i16::from_le_bytes(
+                buffer[14..16]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse std1 from raw record"))?,
+            ),
+        })
     }
 }
 

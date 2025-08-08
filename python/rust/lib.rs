@@ -8,11 +8,12 @@ mod pulse_filter;
 mod pulse_reader;
 mod records;
 use pulse_filter::PulseFilter;
-use pulse_reader::PulseReader;
+use pulse_reader::{PulseReader, merge_pulse_files};
 use pyo3::prelude::*;
 
 #[pymodule]
 fn qsi_pulse_reader(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(merge_pulse_files, m)?)?;
     m.add_class::<PulseReader>()?;
     m.add_class::<PulseFilter>()?;
     Ok(())

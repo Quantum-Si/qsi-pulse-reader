@@ -21,34 +21,26 @@ To include the QSI Pulse Reader core library in your Rust project, add the follo
 
 ```toml
 [dependencies]
-qsi_pulse_reader = { git = "ssh://github.com/QuantumSi/qsi-pulse-reader", tag = "1.0.0" }
+qsi_pulse_reader = { git = "ssh://github.com/Quantum-Si/qsi-pulse-reader", tag = "1.1.0" }
 ```
 
 ### Python
 
 The Python bindings make it simple to integrate QSI Pulse Reader into your Python projects.
-To install the Python bindings, ensure you have a [Rust compiler installed](https://rustup.rs),
-then follow these steps:
+Currently, Python versions 3.10 through 3.14 are supported.
 
-1. **Install Build Requirements:**
-   Make sure you have the required Python packages installed:
-   ```sh
-   pip install setuptools-rust build
-   ```
+The Python bindings can be installed using a Python package manager, such as pip:
 
-2. **Build and install the library:**
-   Run the following command from the package root
-   ```sh
-   pip install ./python
-   ```
+```sh
+pip install qsi-pulse-reader
+```
 
 ### R
 
 To use the QSI Pulse Reader in R, you can load the library using:
 
 ```r
-# If installed locally via devtools or similar:
-devtools::install_github("QuantumSI/qsi-pulse-reader")
+remotes::install_github("Quantum-Si/qsi-pulse-reader", subdir = "R/qsi.pulse.reader")
 library(qsi.pulse.reader)
 ```
 
@@ -60,7 +52,7 @@ For developers who want to build the Python and R extensions from source, follow
 
 - **Rust & Cargo:** Install from [rustup.rs](https://rustup.rs).
 - **Python Extension:**
-  - A compatible Python version with development headers is required.
+  - Python 3.10 through 3.14 with development headers.
   - [PyO3](https://github.com/PyO3/pyo3) is used for the Python bindings.
 - **R Extension:**
   - R and the R development headers.
@@ -87,6 +79,7 @@ _For other Linux distributions, install the equivalent packages (e.g., GCC, Pyth
 - Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) (make sure to include C++ build components).
 - Install Rust & Cargo from [rustup.rs](https://rustup.rs).
 - For the Python frontend, install Python from [python.org](https://www.python.org) (ensure you select the option to add Python to your PATH, and include development headers).
+  - Currently supports Python versions 3.10 through 3.14.
 - For the R frontend, install R from [CRAN](https://cran.r-project.org).
 
 ### Python
@@ -161,12 +154,14 @@ from qsi_pulse_reader import PulseReader, PulseFilter
 
 # Option 1: Use keyword arguments for filtering.
 pulse_reader = PulseReader("path/to/pulses.bin", pulse_filter_kwargs={"min_dur_f": 10})
-pulses_df = pulse_reader.get_pulses(0)
+valid_apertures = pulse_reader.apertures
+pulses_df = pulse_reader.get_pulses(valid_apertures[0])
 
 # Option 2: Use a PulseFilter object.
 pulse_filter = PulseFilter(min_dur_f=10, min_snr=5.0)
 pulse_reader = PulseReader("path/to/pulses.bin", pulse_filter=pulse_filter)
-records_df = pulse_reader.get_all_records(0)
+valid_apertures = pulse_reader.apertures
+records_df = pulse_reader.get_all_records(valid_apertures[0])
 ```
 
 ### R

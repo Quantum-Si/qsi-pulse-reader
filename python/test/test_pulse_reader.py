@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from qsi_pulse_reader import PulseFilter, PulseReader
+from qsi_pulse_reader import PulseFilter, PulseReader, merge_pulse_files
 
 
 def test_pulse_reader(pulse_reader):
@@ -106,3 +106,40 @@ def test_copy_apertures_to_new_file(pulse_reader, tmp_path):
         original_pulses = pulse_reader.get_pulses(ap)
         new_pulses = new_pulse_reader.get_pulses(ap)
         pd.testing.assert_frame_equal(original_pulses, new_pulses)
+
+
+@pytest.mark.parametrize("n_copies", [1, 2, 3])
+def test_merge_pulse_files(pulse_file, tmp_path, n_copies):
+    new_file = str(tmp_path / "merged_pulses.bin")
+    pulse_files = [pulse_file] * n_copies
+    pulse_reader = PulseReader(pulse_file)
+
+    merge_pulse_files(pulse_files, new_file)
+    merged_pulse_reader = PulseReader(new_file)
+
+    cols = merged_pulse_reader.metadata["cols"]
+    ap_offset = 0
+    tot_aps = 0
+    tot_rows = 0
+    for _ in range(n_copies):
+        tot_aps += len(pulse_reader.apertures)
+        tot_rows += pulse_reader.metadata["rows"]
+
+        for ap in pulse_reader.apertures:
+            new_records = merged_pulse_reader.get_all_records(ap + ap_offset)
+            ap_index = new_records.attrs["aperture_index"]
+            assert (
+                ap_index == ap + ap_offset
+            ), f"Aperture index mismatch for {ap}: expected {ap + ap_offset}, got {ap_index}"
+
+            x = new_records.attrs["aperture_x"]
+            y = new_records.attrs["aperture_y"]
+            assert ap_index == x + cols * y
+
+            old_records = pulse_reader.get_all_records(ap)
+            assert old_records.equals(new_records)
+
+        ap_offset += pulse_reader.metadata["cols"] * pulse_reader.metadata["rows"]
+
+    assert len(merged_pulse_reader.apertures) == tot_aps
+    assert merged_pulse_reader.metadata["rows"] == tot_rows

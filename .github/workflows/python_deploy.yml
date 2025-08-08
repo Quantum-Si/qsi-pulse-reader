@@ -1,0 +1,122 @@
+name: Deploy Python Package
+
+on:
+  release:
+    types: [ "published" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        version: "0.6.17"
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: "python/pyproject.toml"
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: "stable"
+
+    - name: Install cibuildwheel
+      run: uv pip install --system cibuildwheel[uv]==3.0.0
+
+    # To ensure rust-core and the test file are copied over correctly, we need to run a build
+    # on the host system first. This probably only matters for Linux hosts, but it costs almost
+    # nothing, so we run it on all hosts.
+    - name: Initial host sdist build
+      run: uv build --sdist --out-dir ./wheelhouse_ignore ./python
+
+    - name: Build wheels
+      run: uv run cibuildwheel --output-dir wheelhouse ./python
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cibw-${{ matrix.os }}-${{ strategy.job-index }}
+        path: ./wheelhouse/*.whl
+
+  make_sdist:
+    name: Make SDist
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        version: "0.6.17"
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: "python/pyproject.toml"
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: "stable"
+
+    - name: Install and check version
+      run: |
+        uv pip install --system ./python
+        PKG_VERSION=$(python3 -c 'from importlib.metadata import version; print(version("qsi-pulse-reader"))')
+        if [ "$PKG_VERSION" != "$GITHUB_REF_NAME" ]
+        then
+         echo "ERROR: Version number from tag does not match the package version number."
+         exit 1
+        fi
+
+    - name: Build
+      run: uv build --sdist --out-dir ./wheelhouse ./python
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cibw-sdist
+        path: wheelhouse/*.tar.gz
+
+  upload:
+    needs: [build, make_sdist]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: cibw-*
+        path: dist
+        merge-multiple: true
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        version: "0.6.17"
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: "python/pyproject.toml"
+
+    - name: Publish
+      run: uv publish --publish-url $PYPI_PUBLISH_URL --trusted-publishing always dist/*

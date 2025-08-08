@@ -26,20 +26,64 @@ impl PulseFileHeader {
     /// Create a header from a 48-byte buffer
     ///
     /// Creates a new PulseFileHeader from the first 48 bytes of a pulses.bin file.
-    pub fn new(buffer: &[u8; FILE_HEADER_SIZE_FULL]) -> Self {
-        PulseFileHeader {
-            magic: u32::from_le_bytes(buffer[0..4].try_into().unwrap()),
-            version: u32::from_le_bytes(buffer[4..8].try_into().unwrap()),
-            num_reads: u64::from_le_bytes(buffer[8..16].try_into().unwrap()),
-            metadata_length: u32::from_le_bytes(buffer[16..20].try_into().unwrap()),
-            encoding_record_type: u8::from_le_bytes(buffer[20..21].try_into().unwrap()),
-            encoding_record_size: u8::from_le_bytes(buffer[21..22].try_into().unwrap()),
-            num_encoding_records: u16::from_le_bytes(buffer[22..24].try_into().unwrap()),
-            record_header_size: u32::from_le_bytes(buffer[24..28].try_into().unwrap()),
-            record_size: u32::from_le_bytes(buffer[28..32].try_into().unwrap()),
-            data_offset: u64::from_le_bytes(buffer[32..40].try_into().unwrap()),
-            index_offset: u64::from_le_bytes(buffer[40..48].try_into().unwrap()),
-        }
+    pub fn new(buffer: &[u8; FILE_HEADER_SIZE_FULL]) -> Result<Self> {
+        Ok(PulseFileHeader {
+            magic: u32::from_le_bytes(
+                buffer[0..4]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse magic number from header"))?,
+            ),
+            version: u32::from_le_bytes(
+                buffer[4..8]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse version from header"))?,
+            ),
+            num_reads: u64::from_le_bytes(
+                buffer[8..16]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse num_reads from header"))?,
+            ),
+            metadata_length: u32::from_le_bytes(
+                buffer[16..20]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse metadata_length from header"))?,
+            ),
+            encoding_record_type: u8::from_le_bytes(
+                buffer[20..21]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse encoding_record_type from header"))?,
+            ),
+            encoding_record_size: u8::from_le_bytes(
+                buffer[21..22]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse encoding_record_size from header"))?,
+            ),
+            num_encoding_records: u16::from_le_bytes(
+                buffer[22..24]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse num_encoding_records from header"))?,
+            ),
+            record_header_size: u32::from_le_bytes(
+                buffer[24..28]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse record_header_size from header"))?,
+            ),
+            record_size: u32::from_le_bytes(
+                buffer[28..32]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse record_size from header"))?,
+            ),
+            data_offset: u64::from_le_bytes(
+                buffer[32..40]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse data_offset from header"))?,
+            ),
+            index_offset: u64::from_le_bytes(
+                buffer[40..48]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse index_offset from header"))?,
+            ),
+        })
     }
 
     /// Validates whether a pulse file header is valid
@@ -112,13 +156,17 @@ impl PulseFileIndex {
     ///
     /// Parses a byte buffer containing `num_reads * 12` bytes to create a
     /// PulseFileIndex instance.
-    pub fn new(buffer: &[u8], num_reads: usize) -> Self {
-        let min = u32::from_le_bytes(buffer[0..4].try_into().unwrap()) as usize;
+    pub fn new(buffer: &[u8], num_reads: usize) -> Result<Self> {
+        let min = u32::from_le_bytes(
+            buffer[0..4]
+                .try_into()
+                .map_err(|_| anyhow!("Failed to parse min aperture index from buffer"))?,
+        ) as usize;
         let max = u32::from_le_bytes(
             buffer
                 [((num_reads - 1) * INDEX_RECORD_SIZE)..((num_reads - 1) * INDEX_RECORD_SIZE + 4)]
                 .try_into()
-                .unwrap(),
+                .map_err(|_| anyhow!("Failed to parse max aperture index from buffer"))?,
         ) as usize;
 
         let mut apertures = vec![0usize; num_reads];
@@ -127,19 +175,19 @@ impl PulseFileIndex {
             apertures[idx] = u32::from_le_bytes(
                 buffer[(idx * INDEX_RECORD_SIZE)..(idx * INDEX_RECORD_SIZE + 4)]
                     .try_into()
-                    .unwrap(),
+                    .map_err(|_| anyhow!("Failed to parse aperture index at position {}", idx))?,
             ) as usize;
             index_map[apertures[idx] - min] = u64::from_le_bytes(
                 buffer[(idx * INDEX_RECORD_SIZE + 4)..(idx * INDEX_RECORD_SIZE + 12)]
                     .try_into()
-                    .unwrap(),
+                    .map_err(|_| anyhow!("Failed to parse byte location at position {}", idx))?,
             );
         }
-        PulseFileIndex {
+        Ok(PulseFileIndex {
             apertures,
             index_map,
             min,
-        }
+        })
     }
 
     /// Attempts to get the byte location of the provided aperture index.
@@ -147,9 +195,20 @@ impl PulseFileIndex {
     /// Will return the byte location of the provided aperture index, or will
     /// return an error if the aperture index is not contained in the index.
     pub fn get(&self, ap: usize) -> Result<u64> {
+        // If the aperture index is out of bounds, return an error
+        if ap < self.min || ap >= self.min + self.index_map.len() {
+            return Err(anyhow!(
+                "This file does not contain the provided aperture index: {}",
+                ap
+            ));
+        }
         let offset = self.index_map[ap - self.min];
+        // If the offset is zero, that means the aperture is not present, so return an error
         if offset == 0u64 {
-            return Err(anyhow!("Invalid aperture index: {}", ap));
+            return Err(anyhow!(
+                "This file does not contain the provided aperture index: {}",
+                ap
+            ));
         };
         Ok(offset)
     }
@@ -207,14 +266,30 @@ pub struct ApertureHeader {
 
 impl ApertureHeader {
     /// Instantiates an aperture header from a buffer of 16 bytes
-    pub fn new(buffer: &[u8; 16], byte_loc: u64) -> Self {
-        ApertureHeader {
-            x: u32::from_le_bytes(buffer[0..4].try_into().unwrap()),
-            y: u32::from_le_bytes(buffer[4..8].try_into().unwrap()),
-            well_id: u32::from_le_bytes(buffer[8..12].try_into().unwrap()),
-            num_pulses: u32::from_le_bytes(buffer[12..16].try_into().unwrap()),
+    pub fn new(buffer: &[u8; 16], byte_loc: u64) -> Result<Self> {
+        Ok(ApertureHeader {
+            x: u32::from_le_bytes(
+                buffer[0..4]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse x coordinate from aperture header"))?,
+            ),
+            y: u32::from_le_bytes(
+                buffer[4..8]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse y coordinate from aperture header"))?,
+            ),
+            well_id: u32::from_le_bytes(
+                buffer[8..12]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse well_id from aperture header"))?,
+            ),
+            num_pulses: u32::from_le_bytes(
+                buffer[12..16]
+                    .try_into()
+                    .map_err(|_| anyhow!("Failed to parse num_pulses from aperture header"))?,
+            ),
             byte_loc,
-        }
+        })
     }
 
     pub fn write_all<W>(&self, writer: &mut W) -> Result<()>

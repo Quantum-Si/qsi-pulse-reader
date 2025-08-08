@@ -1,12 +1,13 @@
 [package]
 name = "qsi_pulse_reader_r"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 description = "R bindings of library for reading pulses.bin files"
 readme = "README.md"
 repository = "https://github.com/QuantumSi/qsi-pulse-reader"
 license-file = "LICENSE"
-
+publish = false
+rust-version = "1.65"
 
 [lib]
 crate-type = [ "staticlib" ]
@@ -14,5 +15,4 @@ name = "qsi_pulse_reader_r"
 
 [dependencies]
 extendr-api = "0.8"
-extendr-macros = "0.8"
 qsi_pulse_reader = { path = "./rust-core" }

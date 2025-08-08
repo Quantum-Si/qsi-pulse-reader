@@ -48,11 +48,19 @@ impl PulseReader {
     /// reader <- PulseReader$new("pulses.bin")
     /// ```
     pub(crate) fn new(file_name: &str) -> Result<Self> {
-        let pulse_reader = RustPulseReader::open(file_name.to_string()).map_err(|e| e.to_string())?;
+        let pulse_reader =
+            RustPulseReader::open(file_name.to_string()).map_err(|e| e.to_string())?;
         let source = "pulses.bin".to_string();
-        let analysis_id = file_name.split('.').next().unwrap().to_string();
+        let analysis_id = file_name
+            .split('.')
+            .next()
+            .ok_or_else(|| "Invalid file name".to_string())?
+            .to_string();
         let frame_dur_s = 1.0 / pulse_reader.fps;
-        let run_dur_s = pulse_reader.metadata["duration"].as_f64().unwrap() as f32;
+        let run_dur_s = pulse_reader.metadata["duration"]
+            .as_f64()
+            .ok_or_else(|| "Missing or invalid 'duration' field in metadata".to_string())?
+            as f32;
         let run_dur_f = (run_dur_s * pulse_reader.fps).ceil() as u64;
 
         Ok(PulseReader {
@@ -82,7 +90,10 @@ impl PulseReader {
         &mut self,
         aperture_index: usize,
     ) -> Result<Dataframe<FormattedRecordR>> {
-        let (records, header) = self.pulse_reader.get_all_records(aperture_index).unwrap();
+        let (records, header) = self
+            .pulse_reader
+            .get_all_records(aperture_index)
+            .map_err(|e| e.to_string())?;
         let r_records = records
             .iter()
             .map(|record| FormattedRecordR::from_record(record))
@@ -109,7 +120,10 @@ impl PulseReader {
         &mut self,
         aperture_index: usize,
     ) -> Result<Dataframe<NormalizedPulseR>> {
-        let (records, header) = self.pulse_reader.get_pulses(aperture_index, None).unwrap();
+        let (records, header) = self
+            .pulse_reader
+            .get_pulses(aperture_index, None)
+            .map_err(|e| e.to_string())?;
         let r_records = records
             .iter()
             .map(|record| NormalizedPulseR::from_pulse(record))
@@ -121,6 +135,6 @@ impl PulseReader {
 }
 
 extendr_module! {
-    mod qsi_pulse_reader;
+    mod pulse_reader;
     impl PulseReader;
 }
