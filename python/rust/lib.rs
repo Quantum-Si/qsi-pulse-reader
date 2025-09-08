@@ -4,8 +4,8 @@
 //! - `PulseFile`, a pulses.bin reader
 //! - `PulseFilter`, a normalized pulse filter
 
-mod pulse_filter;
-mod pulse_reader;
+pub mod pulse_filter;
+pub mod pulse_reader;
 mod records;
 use pulse_filter::PulseFilter;
 use pulse_reader::{PulseReader, merge_pulse_files};

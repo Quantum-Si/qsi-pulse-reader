@@ -11,7 +11,7 @@ use qsi_pulse_reader::pulse_reader::merge_pulse_files as rust_merge_pulse_files;
 /// Pulses.bin reader
 #[pyclass]
 pub(super) struct PulseReader {
-    pulse_reader: Option<RustPulseReader>,
+    pub pulse_reader: Option<RustPulseReader>,
     pulse_filter: Option<PulseFilter>,
     pandas: Py<PyModule>,
     common_attributes: Py<PyDict>,
