@@ -72,7 +72,7 @@ dependencies = [
 
 [[package]]
 name = "qsi_pulse_reader"
-version = "1.1.1"
+version = "1.1.2"
 dependencies = [
  "anyhow",
  "serde",
@@ -81,7 +81,7 @@ dependencies = [
 
 [[package]]
 name = "qsi_pulse_reader_r"
-version = "1.1.1"
+version = "1.1.2"
 dependencies = [
  "extendr-api",
  "qsi_pulse_reader",

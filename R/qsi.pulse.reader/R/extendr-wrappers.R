@@ -10,6 +10,10 @@
 #' @useDynLib qsi.pulse.reader, .registration = TRUE
 NULL
 
+#' Environment holding methods for the PulseReader reference-like object.
+#'
+#' Users construct via `PulseReader$new("pulses.bin")`.
+#' @export
 PulseReader <- new.env(parent = emptyenv())
 
 PulseReader$new <- function(file_name) .Call(wrap__PulseReader__new, file_name)

@@ -3,3 +3,4 @@
 S3method("$",PulseReader)
 S3method("[[",PulseReader)
 useDynLib(qsi.pulse.reader, .registration = TRUE)
+export(PulseReader)

@@ -1,6 +1,6 @@
 [package]
 name = "qsi_pulse_reader_r"
-version = "1.1.1"
+version = "1.1.2"
 edition = "2021"
 description = "R bindings of library for reading pulses.bin files"
 readme = "README.md"

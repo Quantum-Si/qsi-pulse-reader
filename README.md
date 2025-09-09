@@ -21,7 +21,7 @@ To include the QSI Pulse Reader core library in your Rust project, add the follo
 
 ```toml
 [dependencies]
-qsi_pulse_reader = { git = "ssh://github.com/Quantum-Si/qsi-pulse-reader", tag = "1.1.0" }
+qsi_pulse_reader = { git = "ssh://github.com/Quantum-Si/qsi-pulse-reader", tag = "1.1.2" }
 ```
 
 ### Python
@@ -37,11 +37,16 @@ pip install qsi-pulse-reader
 
 ### R
 
-To use the QSI Pulse Reader in R, you can load the library using:
+The R frontend can be installed by running the R module installation script. On Linux and MacOS:
 
-```r
-remotes::install_github("Quantum-Si/qsi-pulse-reader", subdir = "R/qsi.pulse.reader")
-library(qsi.pulse.reader)
+```sh
+bash R/qsi.pulse.reader/tools/install_r_module.sh
+```
+
+On Windows:
+
+```bat
+R\qsi.pulse.reader\tools\install_r_module.bat
 ```
 
 ## Building From Source
@@ -101,32 +106,17 @@ It is necessary to re-run `pip install ./python` in order for modifications to t
 
 ### R Extension
 
-The R extension is available in the `R/qsi.pulse.reader/` directory and uses [extendr](https://extendr.github.io/).
+The R frontend can be installed by running the R module installation script. On Linux and MacOS:
 
-1. **Change into the R directory:**
+```sh
+bash R/qsi.pulse.reader/tools/install_r_module.sh
+```
 
-    ```sh
-    cd R/qsi.pulse.reader
-    ```
+On Windows:
 
-2. **Build and install the package:**
-
-    From within your R console, run:
-
-    ```r
-    install.packages("devtools")  # if not already installed
-    devtools::install()
-    ```
-
-3. **Testing the build:**
-
-    You can load the package in R and run any provided examples:
-
-    ```r
-    library(qsi.pulse.reader)
-    # Example usage:
-    reader <- PulseReader$new("path/to/pulses.bin")
-    ```
+```bat
+R\qsi.pulse.reader\tools\install_r_module.bat
+```
 
 _If you are using a different Linux distro, macOS, or Windows, please install the equivalent system packages as noted above._
 
@@ -173,10 +163,10 @@ library(qsi.pulse.reader)
 reader <- PulseReader$new("path/to/pulses.bin")
 
 # Get normalized pulses as a data frame
-pulses <- reader$get_pulses(0)
+pulses <- reader$get_pulses(221939)
 
 # Get formatted records
-records <- reader$get_all_records(0)
+records <- reader$get_all_records(221939)
 ```
 
 ## QDK files

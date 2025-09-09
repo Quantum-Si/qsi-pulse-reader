@@ -1,6 +1,6 @@
 Package: qsi.pulse.reader
 Title: Read QSI Pulses.bin Files
-Version: 1.1.1
+Version: 1.1.2
 Authors@R:
     person("Eric", "Hermes", , "community@quantum-si.com", role = c("aut", "cre"))
 Description: R wrapper for the QSI pulses.bin reader library
