@@ -2,12 +2,19 @@
 
 The Quantum-Si analysis software produces several data artifacts containing a summary of the workflow results.
 These files typically have a ".qdk" suffix, and are zip files containing one or more parquet files with tables of values.
-The following Python script can be used to read the tables into a Pandas DataFrame or to read the file's metadata:
+The following Python script can be used to read the tables into a Pandas DataFrame or to read the file's metadata (note the pyarrow dependency - fastparquet should work as an alternative as well):
 
 ```python
+# /// script
+# dependencies = [
+#   "pyarrow",
+# ]
+# ///
+
 from typing import Any
 import zipfile
 import pandas as pd
+import json
 from io import BytesIO
 
 
@@ -28,7 +35,7 @@ def read_qdk(filepath: str) -> pd.DataFrame:
         return pd.concat(dfs, ignore_index=True)
 
 
-def read_qdk_metadata(filepath: str) -> dict[str, Any]
+def read_qdk_metadata(filepath: str) -> dict[str, Any]:
     """Read the QDK file metadata."""
     with zipfile.ZipFile(filepath, "r") as zf:
         with zf.open("metadata.json") as f:
